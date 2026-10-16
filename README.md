@@ -27,7 +27,7 @@ Open http://127.0.0.1:8080 in your browser. If that port is busy, start on anoth
 
 1. Click **+ New VM**. Give the VM a name, choose its memory and architecture, and check the disk image. It is filled in with `disks/myos.img`.
 2. Click **Create VM**. The disk is copied, so each VM has its own disk. Repeat this for as many VMs as you like.
-3. Click **Start** on a VM's card, then **Open screen**. MyOS starts on its graphical desktop (16 MiB RAM by default). In the screen, press **1** for Files, **2** for Terminal, **3** for System Monitor, or **4** for Settings. Use `exit` in Terminal to return to the desktop.
+3. Click **Start** on a VM's card, then **Open screen**. MyOS starts on its graphical desktop. In the screen, press **1** for Files, **2** for Terminal, **3** for System Monitor, or **4** for Settings. Use `exit` in Terminal to return to the desktop.
 
 ## Getting out of a VM
 

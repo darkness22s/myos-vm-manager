@@ -9,7 +9,7 @@ and a FAT16 filesystem that reads and writes real files on disk.
 
 The BIOS boot path selects 320x200 256-color VGA mode. MyOS draws a desktop,
 icons, windows, and a taskbar directly to the VGA framebuffer; it uses about
-64 KiB of video memory and keeps the existing 16 MiB VM memory setting.
+64 KiB of video memory and boots with the VM Manager's existing memory configuration.
 
 - **Files** lists real files in the FAT16 root directory.
 - **Terminal** runs the existing shell (`help`, `ls`, `cat`, `write`, `rm`, `df`, `mem`, `uptime`, and more). Type `exit` to return to the desktop.
