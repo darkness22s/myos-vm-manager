@@ -22,12 +22,12 @@ CFLAGS=(-m32 -std=gnu99 -ffreestanding -O2 -Wall -Wextra
         -fno-tree-loop-distribute-patterns -nostdlib)
 
 nasm -f elf32 kernel/start.asm -o "$B/start.o"
-for f in console interrupts disk lib shell main; do
+for f in console interrupts disk lib shell desktop main; do
     gcc "${CFLAGS[@]}" -c "kernel/$f.c" -o "$B/$f.o"
 done
 ld -m elf_i386 -T kernel/linker.ld -o "$B/kernel.elf" \
    "$B/start.o" "$B/console.o" "$B/interrupts.o" "$B/disk.o" \
-   "$B/lib.o" "$B/shell.o" "$B/main.o"
+   "$B/lib.o" "$B/shell.o" "$B/desktop.o" "$B/main.o"
 objcopy -O binary "$B/kernel.elf" "$B/kernel.bin"
 
 KSIZE=$(stat -c %s "$B/kernel.bin")

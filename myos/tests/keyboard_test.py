@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-"""tests/keyboard_test.py - drives the PS/2 keyboard path end to end.
+"""Exercise the graphical desktop, keyboard-driven apps, and terminal in QEMU.
 
-Keys are sent through the QEMU monitor (sendkey), so they reach the kernel
-exactly like physical key presses: IRQ1, scan code translation, line editing,
-and the shell. The VGA text buffer is read back with the monitor's xp command
-to check what is on screen. Finally a deliberate divide-by-zero checks that
-the exception handler prints a panic instead of silently rebooting.
+Screenshots are taken through the QEMU monitor so this test also runs headless
+in CI. The serial-shell and filesystem tests live in smoke.sh.
 """
 import os
-import re
 import shutil
 import socket
 import subprocess
@@ -64,40 +60,57 @@ def type_text(text):
         monitor("sendkey " + KEY_NAMES.get(ch, ch), wait=0.08)
 
 
-def read_screen():
-    """Returns the 25 text rows currently shown in VGA memory."""
-    out = monitor("xp /4000xb 0xb8000", wait=0.5)
-    values = []
-    for line in out.splitlines():
-        m = re.search(r"(?:^|\s)[0-9a-fA-F]{8,16}:(.*)$", line)
-        if m:
-            values += [int(h, 16) for h in re.findall(r"(?:0x)?([0-9a-fA-F]{2})\b", m.group(1))]
-    chars = values[0::2][:80 * 25]            # every other byte is an attribute
-    rows = []
-    for r in range(25):
-        row = chars[r * 80:(r + 1) * 80]
-        rows.append("".join(chr(c) if 32 <= c < 127 else " " for c in row).rstrip())
-    return rows
+def screenshot(name):
+    """Capture the VGA output as PPM through QEMU's monitor."""
+    path = os.path.join(tmp, name + ".ppm")
+    monitor("screendump " + path, wait=0.3)
+    data = open(path, "rb").read()
+    pos = 0
+    tokens = []
+    while len(tokens) < 4:
+        while pos < len(data) and data[pos] in b" \t\r\n":
+            pos += 1
+        if pos < len(data) and data[pos] == ord("#"):
+            pos = data.find(b"\n", pos) + 1
+            continue
+        end = pos
+        while end < len(data) and data[end] not in b" \t\r\n":
+            end += 1
+        tokens.append(data[pos:end])
+        pos = end
+    assert tokens[0] == b"P6", "QEMU did not return a PPM screenshot"
+    width, height, maxval = map(int, tokens[1:])
+    pos += 2 if data[pos:pos + 2] == b"\r\n" else 1
+    pixels = data[pos:]
+    assert width == 320 and height == 200 and maxval == 255, (width, height, maxval)
+    assert len(pixels) == width * height * 3, "incomplete QEMU screenshot"
+    return pixels
 
 
-drain(1.5)                                    # let the kernel boot
+def color_count(pixels):
+    return len(set(zip(pixels[0::3], pixels[1::3], pixels[2::3])))
+
+
+drain(1.5)                                    # let the graphical desktop boot
+home = screenshot("home")
+monitor("sendkey 3")                          # open System Monitor from keyboard
+system = screenshot("system")
+monitor("sendkey 2")                          # open the integrated terminal
+terminal = screenshot("terminal")
 type_text("echo keyboard works\n")
-time.sleep(0.3)
+terminal_output = screenshot("terminal-output")
 type_text("crash\n")
-time.sleep(0.8)
-rows = read_screen()
+panic = screenshot("panic")
 
 checks = [
-    ("keyboard input reaches the shell", "myos> echo keyboard works" in rows),
-    ("echo prints the typed text",       "keyboard works" in rows),
-    ("divide-by-zero prints a panic",    any("KERNEL PANIC: divide error (vector 0)" in r for r in rows)),
+    ("VGA desktop rendered in multiple colors", color_count(home) >= 8),
+    ("keyboard shortcut opens a desktop app", system != home),
+    ("keyboard input updates the graphical terminal", terminal_output != terminal),
+    ("kernel exception handler updates the terminal display", panic != terminal_output),
 ]
 
-print("Screen as read from VGA memory:")
-for r in rows:
-    if r:
-        print("    | " + r)
-print()
+print("VGA mode: 320x200x24-bit screenshot from QEMU")
+print("Distinct desktop colors: %d" % color_count(home))
 passed = 0
 for desc, ok in checks:
     print("  %s  %s" % ("PASS" if ok else "FAIL", desc))

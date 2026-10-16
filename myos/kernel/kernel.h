@@ -43,6 +43,7 @@ void console_clear(void);
 void serial_init(void);
 int  serial_rx_ready(void);
 int  serial_rx(void);
+int  serial_is_up(void);
 void kputc(char c);
 void kprintf(const char *fmt, ...);
 
@@ -67,10 +68,17 @@ void  heap_stats(u32 *used, u32 *free_bytes, u32 *largest_free);
 /* disk.c */
 int  disk_init(void);
 void fat_ls(void);
+int  fat_entry_get(u32 index, char *name, u32 *size);
 int  fat_cat(const char *name);
 int  fat_write(const char *name, const char *data, u32 len);
 int  fat_delete(const char *name);
 void fat_df(void);
+
+/* desktop.c: low-memory VGA mode-13h desktop and graphical terminal. */
+void desktop_run(void);
+int  desktop_console_active(void);
+void desktop_console_putc(char c);
+void desktop_console_clear(void);
 
 /* shell.c */
 void shell_run(void);

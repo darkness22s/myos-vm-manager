@@ -23,5 +23,10 @@ void kmain(void)
     else
         kprintf("disk: no MyOS volume found, running without storage\n");
 
-    shell_run();
+    /* The manager guest boots into the graphical desktop when no COM1 backend
+       is attached. Serial-backed invocations keep the shell for CI and recovery. */
+    if (serial_is_up())
+        shell_run();
+    else
+        desktop_run();
 }

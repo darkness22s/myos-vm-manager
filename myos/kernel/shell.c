@@ -3,6 +3,7 @@
 #include "kernel.h"
 
 static char line[4096];            /* big enough for the largest write command */
+static int shell_exit;
 
 static int input_getc(void)
 {
@@ -56,7 +57,7 @@ static void cmd_help(void)
     kprintf("  echo TEXT        print text\n");
     kprintf("  mem              heap usage\n");
     kprintf("  uptime           time since the timer started\n");
-    kprintf("  clear, reboot, halt\n");
+    kprintf("  clear, reboot, halt, exit\n");
 }
 
 static void run(char *cmd)
@@ -113,6 +114,8 @@ static void run(char *cmd)
         kprintf("up %u.%02u s\n", ms / 1000, (ms % 1000) / 10);
     } else if (!strcmp(cmd, "clear")) {
         console_clear();
+    } else if (!strcmp(cmd, "exit")) {
+        shell_exit = 1;
     } else if (!strcmp(cmd, "reboot")) {
         kprintf("rebooting\n");
         outb(0x64, 0xFE);          /* keyboard controller: pulse the reset line */
@@ -135,10 +138,13 @@ static void run(char *cmd)
 
 void shell_run(void)
 {
+    shell_exit = 0;
     kprintf("type 'help' for commands\n");
     for (;;) {
         kprintf("myos> ");
         read_line();
         run(line);
+        if (shell_exit)
+            return;
     }
 }

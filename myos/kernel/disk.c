@@ -375,6 +375,33 @@ summary:
     kprintf("%u file(s), %u bytes\n", files, bytes);
 }
 
+/* Return the zero-based root-directory file at index. */
+int fat_entry_get(u32 index, char *name, u32 *size)
+{
+    if (need_mount())
+        return -1;
+    u8 buf[SECTOR];
+    u32 seen = 0;
+    for (u32 s = 0; s < root_sectors; s++) {
+        if (ata_read(root_lba + s, buf))
+            return -1;
+        for (u32 i = 0; i < 16; i++) {
+            if (s * 16 + i >= root_entries || buf[i * 32] == 0x00)
+                return 0;
+            const u8 *e = buf + i * 32;
+            if (!is_file_entry(e))
+                continue;
+            if (seen++ == index) {
+                name_from_83(e, name);
+                if (size)
+                    *size = rd32(e + 28);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 int fat_cat(const char *name)
 {
     if (need_mount())

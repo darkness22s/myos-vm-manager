@@ -145,7 +145,7 @@ def start_vm(vm):
             [binary, "-name", vm["name"], "-m", str(vm["memory"]),
              "-hda", str(folder / "disk.img"), "-display", "none",
              "-monitor", f"tcp:127.0.0.1:{vm['port']},server,nowait",
-             "-serial", f"file:{folder / 'serial.log'}",
+             "-serial", "none",
              "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"],
             stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
             start_new_session=POSIX, creationflags=DETACHED)           # own session: closing this page never kills the VM
@@ -229,7 +229,7 @@ def create_vm(body):
     return vm
 
 
-# ---- screens, keys and the serial log ----
+# ---- screens, keys, and guest status ----
 
 def ppm_to_png(data):
     """Converts the binary PPM (P6) screendump that QEMU writes into a PNG file."""
@@ -280,6 +280,8 @@ def send_keys(vm, keys):
 def serial_text(vm, limit=20000):
     path = VMS_DIR / vm["id"] / "serial.log"
     data = path.read_bytes()[-limit:] if path.exists() else b""
+    if not data:
+        return "Guest serial console is disabled; use its graphical screen and keyboard.\n"
     return data.decode(errors="replace").replace("\r", "")
 
 

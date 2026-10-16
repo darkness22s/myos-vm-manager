@@ -36,6 +36,10 @@ static void vga_scroll(void)
 
 void console_clear(void)
 {
+    if (desktop_console_active()) {
+        desktop_console_clear();
+        return;
+    }
     for (int i = 0; i < VGA_COLS * VGA_ROWS; i++)
         VGA_MEM[i] = blank_cell();
     cur_col = 0;
@@ -84,6 +88,11 @@ void serial_init(void)
     serial_up = (inb(COM1 + 5) != 0xFF);   /* 0xFF means no UART is there */
 }
 
+int serial_is_up(void)
+{
+    return serial_up;
+}
+
 static void serial_tx(char c)
 {
     if (!serial_up)
@@ -105,7 +114,10 @@ int serial_rx(void)
 
 void kputc(char c)
 {
-    vga_putc(c);
+    if (desktop_console_active())
+        desktop_console_putc(c);
+    else
+        vga_putc(c);
     if (c == '\n')
         serial_tx('\r');
     serial_tx(c);

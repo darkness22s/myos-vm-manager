@@ -58,6 +58,11 @@ stage2:
     mov si, msg_ok
     call print16
 
+    ; Keep the boot path BIOS-only, then hand the kernel a 320x200x256
+    ; framebuffer (VGA mode 13h) for the native desktop.
+    mov ax, 0x0013
+    int 0x10
+
     cli
     lgdt [gdt_desc]
     mov eax, cr0

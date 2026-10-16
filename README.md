@@ -4,7 +4,7 @@ This ZIP contains:
 
 - `vm-manager/`: a web page for running several QEMU virtual machines. You can create, start, stop, and delete VMs, open each VM's screen, type into it, and leave it again.
 - `disks/myos.img`: a ready-to-boot MyOS disk image. It is the default disk for new VMs.
-- `myos/`: the MyOS source code (bootloader, 32-bit kernel, shell, and tests). Rebuild it with `./build.sh`.
+- `myos/`: the MyOS source code (bootloader, low-memory graphical desktop, kernel shell, and tests). Rebuild it with `bash build.sh`.
 
 ## 1. Install QEMU
 
@@ -27,7 +27,7 @@ Open http://127.0.0.1:8080 in your browser. If that port is busy, start on anoth
 
 1. Click **+ New VM**. Give the VM a name, choose its memory and architecture, and check the disk image. It is filled in with `disks/myos.img`.
 2. Click **Create VM**. The disk is copied, so each VM has its own disk. Repeat this for as many VMs as you like.
-3. Click **Start** on a VM's card, then **Open screen**.
+3. Click **Start** on a VM's card, then **Open screen**. MyOS starts on its graphical desktop (16 MiB RAM by default). In the screen, press **1** for Files, **2** for Terminal, **3** for System Monitor, or **4** for Settings. Use `exit` in Terminal to return to the desktop.
 
 ## Getting out of a VM
 
@@ -41,19 +41,21 @@ Inside MyOS, `halt` closes the VM by itself, and `reboot` restarts it.
 
 ## Try MyOS
 
+Open Terminal with **2**, then run:
+
     help
     write NOTE.TXT hello from my VM
     cat NOTE.TXT
     ls
-    halt
 
-Each VM has its own disk, so files written in one VM do not appear in another.
+Press `exit` to return to the desktop. Each VM has its own disk, so files written in one VM do not appear in another.
 
 ## Troubleshooting
 
 - **"qemu-system-i386 was not found":** install QEMU (step 1), or point the manager at it: `QEMU_I386=/full/path/to/qemu-system-i386 python3 server.py`.
-- **Black screen:** wait a second after Start. If the screen stays black, read `vm-manager/data/vms/<id>/qemu.log`.
-- **Keys do nothing:** click the black screen so its border turns green.
+- **Blank or black screen:** wait a second after Start. If it persists, read `vm-manager/data/vms/<id>/qemu.log`.
+- **Keys do nothing:** click the screen so its border turns green, then use the displayed app hotkeys (1–4).
+- **Serial panel says disabled:** this is expected; the guest uses the graphical VGA screen and keyboard.
 - **VMs still run after you close the page:** this is by design. Stop them from the manager, or run `pkill qemu-system-i386` (Linux and macOS).
 - **Delete is only available** for stopped VMs.
 
@@ -79,6 +81,6 @@ If Ctrl+] does nothing on your keyboard, use the Back button. On some European k
 ## Rebuilding MyOS
 
     cd myos
-    ./build.sh            # creates build/os.img
+    bash build.sh            # creates build/os.img
 
-Copy `build/os.img` over `disks/myos.img` to use your new build in the manager.
+The GitHub Actions workflow builds the image, runs the QEMU tests, and uploads `os.img` as a downloadable artifact. To use a locally built image in the manager, copy `build/os.img` over `disks/myos.img`.
