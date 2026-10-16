@@ -1,0 +1,8 @@
+# Runtime VM state and generated machine artifacts
+vm-manager/data/vms/
+vm-manager/data/vms.json
+
+# Build outputs and Python cache
+myos/build/
+__pycache__/
+*.py[cod]
