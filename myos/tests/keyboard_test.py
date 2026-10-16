@@ -82,7 +82,7 @@ def screenshot(name):
     width, height, maxval = map(int, tokens[1:])
     pos += 2 if data[pos:pos + 2] == b"\r\n" else 1
     pixels = data[pos:]
-    assert width == 320 and height == 200 and maxval == 255, (width, height, maxval)
+    assert (width, height) in ((320, 200), (640, 400)) and maxval == 255, (width, height, maxval)
     assert len(pixels) == width * height * 3, "incomplete QEMU screenshot"
     return pixels
 
