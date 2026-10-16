@@ -1,0 +1,35 @@
+name: MyOS build and QEMU tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build and emulator tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc nasm binutils dosfstools mtools qemu-system-x86 python3
+      - name: Build bootable disk image
+        working-directory: myos
+        run: bash ./build.sh
+      - name: Test serial shell and FAT16 filesystem in QEMU
+        working-directory: myos
+        run: bash tests/smoke.sh
+      - name: Test keyboard and exception handling in QEMU
+        working-directory: myos
+        run: python3 tests/keyboard_test.py
+      - name: Upload bootable MyOS disk
+        uses: actions/upload-artifact@v4
+        with:
+          name: myos-disk-image
+          path: myos/build/os.img
+          if-no-files-found: error
